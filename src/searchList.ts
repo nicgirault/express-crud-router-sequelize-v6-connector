@@ -1,36 +1,21 @@
 import { uniqBy, flatten } from 'lodash'
-import {
-  Op,
-  FindOptions,
-  ModelAttributeColumnOptions,
-  WhereOptions,
-  DataTypes,
-} from 'sequelize'
-
-export type GetSearchList = <R>(
-  q: string,
-  limit: number
-) => Promise<{ rows: R[]; count: number }>
-
-type PartialModel<R> = {
-  findAll: (findOptions: FindOptions) => Promise<R[]>
-  rawAttributes: Record<string, ModelAttributeColumnOptions>
-}
+import { Op, WhereOptions, DataTypes, ModelStatic, Model } from 'sequelize'
 
 export const sequelizeSearchFields =
-  <R>(
-    model: PartialModel<R>,
-    searchableFields: string[],
+  <Attributes extends {}>(
+    model: ModelStatic<Model<Attributes>>,
+    searchableFields: (keyof Attributes)[],
     comparator: symbol = Op.iLike
   ) =>
-  async (q: string, limit: number, scope: WhereOptions = {}) => {
+  async (q: string, limit: number, scope: WhereOptions<Attributes> = {}) => {
     const resultChunks = await Promise.all(
-      prepareQueries<R>(model, searchableFields)(q, comparator).map(query =>
-        model.findAll({
-          limit,
-          where: { ...query, ...scope },
-          raw: true,
-        })
+      prepareQueries<Attributes>(model, searchableFields)(q, comparator).map(
+        query =>
+          model.findAll({
+            limit,
+            where: { ...query, ...scope },
+            raw: true,
+          })
       )
     )
 
@@ -39,21 +24,26 @@ export const sequelizeSearchFields =
     return { rows, count: rows.length }
   }
 
-const getSearchTerm = <R>(
-  model: PartialModel<R>,
-  field: string,
+const getSearchTerm = <Attributes extends {}>(
+  model: ModelStatic<Model<Attributes>>,
+  field: keyof Attributes,
   comparator: symbol,
   token: string
 ) => {
-  if (String(model.rawAttributes[field].type) === String(DataTypes.UUID)) {
+  if (
+    String(model.rawAttributes[field as string].type) === String(DataTypes.UUID)
+  ) {
     return { [Op.eq]: token }
   }
   return { [comparator]: `%${token}%` }
 }
 
 export const prepareQueries =
-  <R>(model: PartialModel<R>, searchableFields: string[]) =>
-  (q: string, comparator: symbol = Op.iLike): WhereOptions[] => {
+  <Attributes>(
+    model: ModelStatic<Model<Attributes>>,
+    searchableFields: (keyof Attributes)[]
+  ) =>
+  (q: string, comparator: symbol = Op.iLike): WhereOptions<Attributes>[] => {
     if (!searchableFields) {
       // TODO: we could propose a default behavior based on model rawAttributes
       // or (maybe better) based on existing indexes. This can be complexe

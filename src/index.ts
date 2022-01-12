@@ -1,29 +1,39 @@
-import { Model, BuildOptions, ModelStatic } from 'sequelize'
+import { Model, ModelStatic } from 'sequelize'
 
-type GetOne<R> = (identifier: string) => Promise<R | null>
-type Create<I extends string | number, R> = (body: R) => Promise<R & { id: I }>
-type Destroy = (id: string) => Promise<any>
-type Update<R> = (id: string, data: R) => Promise<any>
-type GetList<R> = (conf: {
-  filter: Record<string, any>
-  limit: number
-  offset: number
-  order: Array<[string, string]>
-}) => Promise<{ rows: R[]; count: number }>
-
-interface Actions<I extends string | number, R> {
-  getOne: GetOne<R> | null
-  create: Create<I, R> | null
-  destroy: Destroy | null
-  update: Update<R> | null
-  getList: GetList<R> | null
+interface Actions<
+  Attributes extends { id: string | number },
+  CreationAttributes extends {} = Attributes
+> {
+  getOne: (
+    identifier: Attributes['id']
+  ) => Promise<Model<Attributes, CreationAttributes> | null>
+  create: (
+    body: CreationAttributes
+  ) => Promise<Model<Attributes, CreationAttributes>>
+  destroy: (id: Attributes['id']) => Promise<{ id: Attributes['id'] }>
+  update: (
+    id: Attributes['id'],
+    data: Partial<Attributes>
+  ) => Promise<Model<Attributes, CreationAttributes>>
+  getList: (conf: {
+    filter: Record<string, any>
+    limit: number
+    offset: number
+    order: Array<[string, string]>
+  }) => Promise<{
+    rows: Model<Attributes, CreationAttributes>[]
+    count: number
+  }>
 }
 
-const sequelizeCrud = <I extends string | number, R extends Model>(
-  model: ModelStatic<R>
-): Actions<I, R> => {
+const sequelizeCrud = <
+  Attributes extends { id: string | number },
+  CreationAttributes extends {} = Attributes
+>(
+  model: ModelStatic<Model<Attributes, CreationAttributes>>
+): Actions<Attributes, CreationAttributes> => {
   return {
-    create: body => model.create(body) as any,
+    create: body => model.create(body),
     update: async (id, body) => {
       const record = await model.findByPk(id)
       if (!record) {
@@ -37,7 +47,7 @@ const sequelizeCrud = <I extends string | number, R extends Model>(
         limit,
         offset,
         order,
-        where: filter as any,
+        where: filter,
         raw: true,
       })
     },
