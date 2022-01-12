@@ -3,7 +3,7 @@
   "version": "3.5.1",
   "description": "Sequelize v6 connector to express-crud-router",
   "main": "./lib/index.js",
-  "types": "./lib/src/index.d.ts",
+  "types": "./lib/index.d.ts",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/lalalilo/express-crud-router-sequelize-v6-connector.git"

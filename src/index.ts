@@ -1,8 +1,4 @@
-import { Model, BuildOptions } from 'sequelize'
-
-type DefinedModel<T> = typeof Model & {
-  new (values?: object, options?: BuildOptions): T
-}
+import { Model, BuildOptions, ModelStatic } from 'sequelize'
 
 type GetOne<R> = (identifier: string) => Promise<R | null>
 type Create<I extends string | number, R> = (body: R) => Promise<R & { id: I }>
@@ -24,7 +20,7 @@ interface Actions<I extends string | number, R> {
 }
 
 const sequelizeCrud = <I extends string | number, R extends Model>(
-  model: DefinedModel<R>
+  model: ModelStatic<R>
 ): Actions<I, R> => {
   return {
     create: body => model.create(body) as any,
