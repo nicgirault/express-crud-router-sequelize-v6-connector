@@ -1,0 +1,49 @@
+version: 2
+
+defaults: &defaults
+  working_directory: ~/express-crud-router-sequelize-v6-connector
+  docker:
+    - image: circleci/node:16
+
+jobs:
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - restore_cache:
+          name: Restore Yarn Package Cache
+          keys:
+            - yarn-packages-{{ checksum "yarn.lock" }}
+
+      - run:
+          name: Install Dependencies
+          command: yarn install --frozen-lockfile
+
+      - save_cache:
+          name: Save Yarn Package Cache
+          key: yarn-packages-{{ checksum "yarn.lock" }}
+          paths:
+            - ~/.cache/yarn
+
+      - run:
+          name: Check types
+          command: yarn check-types
+
+      - run:
+          name: Run tests
+          command: yarn test --coverage
+
+      - run:
+          name: Code coverage
+          command: npx codecov
+
+      - run:
+          name: Release
+          command: npx semantic-release
+
+workflows:
+  version: 2
+  test-deploy:
+    jobs:
+      - test
