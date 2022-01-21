@@ -139,23 +139,33 @@ describe('crud', () => {
   })
 
   it('adopts query for uuid fields', () => {
-    expect(prepareQueries(UuidModel, ['id'])('123-123')).toEqual([
+    const uuid = 'a2b7edef-84a2-4dff-a05d-0374c170c07b'
+    expect(prepareQueries(UuidModel, ['id'])(uuid)).toEqual([
       {
         [Op.or]: [
           {
-            id: { [Op.eq]: '123-123' },
+            id: { [Op.eq]: uuid },
           },
         ],
       },
     ])
-    expect(prepareQueries(UuidModel, ['id', 'title'])('123-123')).toEqual([
+    expect(prepareQueries(UuidModel, ['id', 'title'])(uuid)).toEqual([
       {
         [Op.or]: [
           {
-            id: { [Op.eq]: '123-123' },
+            id: { [Op.eq]: uuid },
           },
           {
-            title: { [Op.iLike]: '%123-123%' },
+            title: { [Op.iLike]: `%${uuid}%` },
+          },
+        ],
+      },
+    ])
+    expect(prepareQueries(UuidModel, ['id', 'title'])('mustach')).toEqual([
+      {
+        [Op.or]: [
+          {
+            title: { [Op.iLike]: '%mustach%' },
           },
         ],
       },

@@ -24,6 +24,8 @@ export const sequelizeSearchFields =
     return { rows, count: rows.length }
   }
 
+  const uuidRegExp = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
+
 const getSearchTerm = <Attributes extends {}>(
   model: ModelStatic<Model<Attributes>>,
   field: keyof Attributes,
@@ -33,6 +35,9 @@ const getSearchTerm = <Attributes extends {}>(
   if (
     String(model.rawAttributes[field as string].type) === String(DataTypes.UUID)
   ) {
+    if (!uuidRegExp.test(token)) {
+      return null
+    }
     return { [Op.eq]: token }
   }
   return { [comparator]: `%${token}%` }
@@ -53,10 +58,17 @@ export const prepareQueries =
       )
     }
 
+    const getOrConditions = (token: string) => {
+      return searchableFields
+          .map(field => [field, getSearchTerm(model, field, comparator, token)])
+          .filter(([, condition]) => Boolean(condition))
+          .map(([field, condition]) => ({
+            [String(field)]: condition,
+          }))
+    }
+
     const defaultQuery = {
-      [Op.or]: searchableFields.map(field => ({
-        [field]: getSearchTerm(model, field, comparator, q),
-      })),
+      [Op.or]: getOrConditions(q),
     }
 
     const tokens = q.split(/\s+/).filter(token => token !== '')
@@ -70,18 +82,14 @@ export const prepareQueries =
       // then search records with all tokens
       {
         [Op.and]: tokens.map(token => ({
-          [Op.or]: searchableFields.map(field => ({
-            [field]: getSearchTerm(model, field, comparator, token),
-          })),
+          [Op.or]: getOrConditions(token),
         })),
       },
 
       // then search records with at least one token
       {
         [Op.or]: tokens.map(token => ({
-          [Op.or]: searchableFields.map(field => ({
-            [field]: getSearchTerm(model, field, comparator, token),
-          })),
+          [Op.or]: getOrConditions(token),
         })),
       },
     ]
