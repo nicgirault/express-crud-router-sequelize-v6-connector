@@ -4,7 +4,7 @@ Sequelize v6 connector to [express-crud-router](https://github.com/lalalilo/expr
 
 ```ts
 import crud from "express-crud-router";
-import sequelizeV6Crud from "express-crud-router-sequelize-v6-router";
+import sequelizeV6Crud from "express-crud-router-sequelize-v6-connector";
 
 app.use(crud("/admin/users", sequelizeV6Crud(User)));
 ```
