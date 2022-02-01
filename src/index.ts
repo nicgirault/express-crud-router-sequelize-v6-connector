@@ -1,4 +1,6 @@
 import { Model, ModelStatic } from 'sequelize'
+import { sequelizeSearchFields } from './searchList';
+export { sequelizeSearchFields }
 
 interface Actions<
   Attributes extends { id: string | number },
