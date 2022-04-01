@@ -1,4 +1,3 @@
-import { uniqBy, flatten } from 'lodash'
 import { Op, WhereOptions, DataTypes, ModelStatic, Model } from 'sequelize'
 
 export const sequelizeSearchFields =
@@ -8,20 +7,12 @@ export const sequelizeSearchFields =
     comparator: symbol = Op.iLike
   ) =>
   async (q: string, limit: number, scope: WhereOptions<Attributes> = {}) => {
-    const resultChunks = await Promise.all(
-      prepareQueries<Attributes>(model, searchableFields)(q, comparator).map(
-        query =>
-          model.findAll({
-            limit,
-            where: { ...query, ...scope },
-            raw: true,
-          })
-      )
-    )
-
-    const rows = uniqBy(flatten(resultChunks).slice(0, limit), 'id')
-
-    return { rows, count: rows.length }
+    const query = prepareQuery<Attributes>(model, searchableFields)(q, comparator)
+    return model.findAndCountAll({
+      limit,
+      where: { ...query, ...scope },
+      raw: true,
+    })
   }
 
   const uuidRegExp = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
@@ -43,12 +34,12 @@ const getSearchTerm = <Attributes extends {}>(
   return { [comparator]: `%${token}%` }
 }
 
-export const prepareQueries =
+export const prepareQuery =
   <Attributes>(
     model: ModelStatic<Model<Attributes>>,
     searchableFields: (keyof Attributes)[]
   ) =>
-  (q: string, comparator: symbol = Op.iLike): WhereOptions<Attributes>[] => {
+  (q: string, comparator: symbol = Op.iLike): WhereOptions<Attributes> => {
     if (!searchableFields) {
       // TODO: we could propose a default behavior based on model rawAttributes
       // or (maybe better) based on existing indexes. This can be complexe
@@ -67,30 +58,18 @@ export const prepareQueries =
           }))
     }
 
-    const defaultQuery = {
-      [Op.or]: getOrConditions(q),
-    }
+    const defaultConditions = getOrConditions(q)
 
     const tokens = q.split(/\s+/).filter(token => token !== '')
-    if (tokens.length < 2) return [defaultQuery]
+    const allTokens = [q, ...(tokens.length > 1 ? tokens : [])]
+    if (tokens.length < 2) return {
+      [Op.or]: defaultConditions,
+    }
 
     // query consists of multiple tokens => do multiple searches
-    return [
-      // priority to unsplit match
-      defaultQuery,
-
-      // then search records with all tokens
-      {
-        [Op.and]: tokens.map(token => ({
-          [Op.or]: getOrConditions(token),
-        })),
-      },
-
-      // then search records with at least one token
-      {
-        [Op.or]: tokens.map(token => ({
-          [Op.or]: getOrConditions(token),
-        })),
-      },
-    ]
+    return {
+      [Op.or]: allTokens.map(token => ({
+        [Op.or]: getOrConditions(token),
+      })),
+    }
   }

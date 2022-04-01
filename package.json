@@ -1,32 +1,29 @@
 {
-  "name": "express-crud-router-sequelize-v6-connector",
-  "version": "3.5.1",
-  "description": "Sequelize v6 connector to express-crud-router",
+  "name": "express-crud-router-sequelize-v6-adapter",
+  "version": "2.0.2",
+  "description": "Sequelize v6 adapter to express-crud-router",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lalalilo/express-crud-router-sequelize-v6-connector.git"
+    "url": "git+https://github.com/urakozz/express-crud-router-sequelize-v6-adapter.git"
   },
   "author": "nicgirault <nic.girault@gmail.com>",
   "keywords": [
     "react-admin",
     "crud",
     "express",
-    "express-crud-router-connector",
+    "express-crud-router-adapter",
     "sequelize"
   ],
   "tags": [
     "react-admin",
     "crud",
     "express",
-    "express-crud-router-connector",
+    "express-crud-router-adapter",
     "sequelize"
   ],
-  "bugs": {
-    "url": "https://github.com/lalalilo/express-crud-router-sequelize-v6-connector/issues"
-  },
-  "homepage": "https://github.com/lalalilo/express-crud-router-sequelize-v6-connector#readme",
+  "homepage": "https://github.com/urakozz/express-crud-router-sequelize-v6-adapter#readme",
   "license": "MIT",
   "scripts": {
     "build": "rimraf lib && babel src -d lib --extensions '.ts' && tsc",
@@ -66,5 +63,8 @@
       "main",
       "next"
     ]
+  },
+  "volta": {
+    "node": "16.10.0"
   }
 }
