@@ -1,16 +1,24 @@
 import { Op, WhereOptions, DataTypes, ModelStatic, Model } from 'sequelize'
-
+type ListOpts<Attributes> = {
+  filter: WhereOptions<Attributes>
+  limit: number
+  offset: number
+  order: Array<[string, string]>
+}
 export const sequelizeSearchFields =
   <Attributes extends {}>(
     model: ModelStatic<Model<Attributes>>,
     searchableFields: (keyof Attributes)[],
     comparator: symbol = Op.iLike
   ) =>
-  async (q: string, limit: number, scope: WhereOptions<Attributes> = {}) => {
+  async (q: string, listOpts: ListOpts<Attributes>) => {
     const query = prepareQuery<Attributes>(model, searchableFields)(q, comparator)
+    const {filter = {}, limit, offset, order} = listOpts
     return model.findAndCountAll({
       limit,
-      where: { ...query, ...scope },
+      offset,
+      order,
+      where: { ...query, ...filter },
       raw: true,
     })
   }
