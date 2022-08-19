@@ -1,5 +1,6 @@
 import { Model, ModelStatic } from 'sequelize'
-import { sequelizeSearchFields } from './searchList';
+import { findAndCountAll } from './helpers'
+import { sequelizeSearchFields } from './searchList'
 export { sequelizeSearchFields }
 
 interface Actions<
@@ -32,7 +33,8 @@ const sequelizeCrud = <
   Attributes extends { id: string | number },
   CreationAttributes extends {} = Attributes
 >(
-  model: ModelStatic<Model<Attributes, CreationAttributes>>
+  model: ModelStatic<Model<Attributes, CreationAttributes>>,
+  options?: { partialPagination?: boolean }
 ): Actions<Attributes, CreationAttributes> => {
   return {
     create: body => model.create(body),
@@ -45,13 +47,11 @@ const sequelizeCrud = <
     },
     getOne: async id => model.findByPk(id),
     getList: async ({ filter, limit, offset, order }) => {
-      return model.findAndCountAll({
-        limit,
-        offset,
-        order,
-        where: filter,
-        raw: true,
-      })
+      return findAndCountAll(
+        model,
+        { where: filter, limit, offset, order },
+        options
+      )
     },
     destroy: async id => {
       const record = await model.findByPk(id)

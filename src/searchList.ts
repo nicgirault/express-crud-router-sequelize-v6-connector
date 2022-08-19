@@ -1,29 +1,42 @@
 import { Op, WhereOptions, DataTypes, ModelStatic, Model } from 'sequelize'
+import { findAndCountAll } from './helpers'
+
 type ListOpts<Attributes> = {
   filter: WhereOptions<Attributes>
   limit: number
   offset: number
   order: Array<[string, string]>
 }
+
 export const sequelizeSearchFields =
   <Attributes extends {}>(
     model: ModelStatic<Model<Attributes>>,
     searchableFields: (keyof Attributes)[],
-    comparator: symbol = Op.iLike
+    options: { partialPagination?: boolean; comparator?: symbol } = {}
   ) =>
   async (q: string, listOpts: ListOpts<Attributes>) => {
-    const query = prepareQuery<Attributes>(model, searchableFields)(q, comparator)
-    const {filter = {}, limit, offset, order} = listOpts
-    return model.findAndCountAll({
-      limit,
-      offset,
-      order,
-      where: { ...query, ...filter },
-      raw: true,
-    })
+    const { comparator = Op.like } = options
+
+    const query = prepareQuery<Attributes>(model, searchableFields)(
+      q,
+      comparator
+    )
+    const { filter = {}, limit, offset, order } = listOpts
+    return findAndCountAll(
+      model,
+      {
+        where: { ...query, ...filter },
+        limit,
+        offset,
+        order,
+      },
+      options
+    )
   }
 
-  const uuidRegExp = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
+const uuidRegExp = new RegExp(
+  /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
+)
 
 const getSearchTerm = <Attributes extends {}>(
   model: ModelStatic<Model<Attributes>>,
@@ -59,20 +72,21 @@ export const prepareQuery =
 
     const getOrConditions = (token: string) => {
       return searchableFields
-          .map(field => [field, getSearchTerm(model, field, comparator, token)])
-          .filter(([, condition]) => Boolean(condition))
-          .map(([field, condition]) => ({
-            [String(field)]: condition,
-          }))
+        .map(field => [field, getSearchTerm(model, field, comparator, token)])
+        .filter(([, condition]) => Boolean(condition))
+        .map(([field, condition]) => ({
+          [String(field)]: condition,
+        }))
     }
 
     const defaultConditions = getOrConditions(q)
 
     const tokens = q.split(/\s+/).filter(token => token !== '')
     const allTokens = [q, ...(tokens.length > 1 ? tokens : [])]
-    if (tokens.length < 2) return {
-      [Op.or]: defaultConditions,
-    }
+    if (tokens.length < 2)
+      return {
+        [Op.or]: defaultConditions,
+      }
 
     // query consists of multiple tokens => do multiple searches
     return {
