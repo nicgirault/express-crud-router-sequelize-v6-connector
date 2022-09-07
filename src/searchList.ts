@@ -8,19 +8,16 @@ type ListOpts<Attributes> = {
   order: Array<[string, string]>
 }
 
+type FieldOpts<Attributes> = { field: keyof Attributes; comparator: symbol }
+
 export const sequelizeSearchFields =
   <Attributes extends {}>(
     model: ModelStatic<Model<Attributes>>,
-    searchableFields: (keyof Attributes)[],
-    options: { partialPagination?: boolean; comparator?: symbol } = {}
+    searchableFields: (keyof Attributes | FieldOpts<Attributes>)[],
+    options: { partialPagination?: boolean } = {}
   ) =>
   async (q: string, listOpts: ListOpts<Attributes>) => {
-    const { comparator = Op.like } = options
-
-    const query = prepareQuery<Attributes>(model, searchableFields)(
-      q,
-      comparator
-    )
+    const query = prepareQuery<Attributes>(model, searchableFields)(q)
     const { filter = {}, limit, offset, order } = listOpts
     return findAndCountAll(
       model,
@@ -38,29 +35,40 @@ const uuidRegExp = new RegExp(
   /^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i
 )
 
+const getCondition = (field: string, comparator: symbol, token: string) => {
+  const isLike = comparator === Op.iLike || comparator === Op.like
+  const isArrayComparator =
+    comparator === Op.contains || comparator === Op.contained
+  const condition = {
+    [comparator]: isLike ? `%${token}%` : isArrayComparator ? [token] : token,
+  }
+  return {
+    [String(field)]: condition,
+  }
+}
+
 const getSearchTerm = <Attributes extends {}>(
   model: ModelStatic<Model<Attributes>>,
-  field: keyof Attributes,
-  comparator: symbol,
+  field: keyof Attributes | FieldOpts<Attributes>,
   token: string
 ) => {
-  if (
-    String(model.rawAttributes[field as string].type) === String(DataTypes.UUID)
-  ) {
+  const fieldName = (typeof field === 'object' ? field.field : field) as string
+  const comparator = typeof field === 'object' ? field.comparator : Op.iLike
+  if (String(model.rawAttributes[fieldName].type) === String(DataTypes.UUID)) {
     if (!uuidRegExp.test(token)) {
       return null
     }
-    return { [Op.eq]: token }
+    return getCondition(fieldName, Op.eq, token)
   }
-  return { [comparator]: `%${token}%` }
+  return getCondition(fieldName, comparator, token)
 }
 
 export const prepareQuery =
-  <Attributes>(
+  <Attributes extends {}>(
     model: ModelStatic<Model<Attributes>>,
-    searchableFields: (keyof Attributes)[]
+    searchableFields: (keyof Attributes | FieldOpts<Attributes>)[]
   ) =>
-  (q: string, comparator: symbol = Op.iLike): WhereOptions<Attributes> => {
+  (q: string): WhereOptions<Attributes> => {
     if (!searchableFields) {
       // TODO: we could propose a default behavior based on model rawAttributes
       // or (maybe better) based on existing indexes. This can be complexe
@@ -72,11 +80,8 @@ export const prepareQuery =
 
     const getOrConditions = (token: string) => {
       return searchableFields
-        .map(field => [field, getSearchTerm(model, field, comparator, token)])
-        .filter(([, condition]) => Boolean(condition))
-        .map(([field, condition]) => ({
-          [String(field)]: condition,
-        }))
+        .map(field => getSearchTerm(model, field, token))
+        .filter(Boolean)
     }
 
     const defaultConditions = getOrConditions(q)

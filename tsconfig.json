@@ -8,6 +8,7 @@
     "esModuleInterop": true,
     "declaration": true,
     "emitDeclarationOnly": true,
+    "skipLibCheck": true,
     "outDir": "lib"
   },
   "include": ["src"],

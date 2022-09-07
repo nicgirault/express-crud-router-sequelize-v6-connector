@@ -37,6 +37,9 @@ describe('crud', () => {
       title: {
         type: DataTypes.STRING,
       },
+      dataList: {
+        type: DataTypes.JSONB,
+      },
     },
     {
       modelName: 'UuidModel',
@@ -44,9 +47,7 @@ describe('crud', () => {
   )
 
   it('handle autocomplete query', () => {
-    expect(
-        prepareQuery(IdModel, ['field1', 'field2'])('some mustach')
-    ).toEqual(
+    expect(prepareQuery(IdModel, ['field1', 'field2'])('some mustach')).toEqual(
       {
         [Op.or]: [
           {
@@ -72,72 +73,78 @@ describe('crud', () => {
             ],
           },
         ],
-      },
+      }
     )
   })
 
   it('supports alternate comparators', () => {
     expect(
-      prepareQuery(IdModel, ['field1'])('some mustach', Op.like)
-    ).toEqual(
-      {
-        [Op.or]: [
-          {
-            [Op.or]: [{ field1: { [Op.like]: '%some mustach%' } }],
-          },
-          {
-            [Op.or]: [{ field1: { [Op.like]: '%some%' } }],
-          },
-          {
-            [Op.or]: [{ field1: { [Op.like]: '%mustach%' } }],
-          },
-        ],
-      },
-    )
+      prepareQuery(IdModel, [{ field: 'field1', comparator: Op.like }])(
+        'some mustach'
+      )
+    ).toEqual({
+      [Op.or]: [
+        {
+          [Op.or]: [{ field1: { [Op.like]: '%some mustach%' } }],
+        },
+        {
+          [Op.or]: [{ field1: { [Op.like]: '%some%' } }],
+        },
+        {
+          [Op.or]: [{ field1: { [Op.like]: '%mustach%' } }],
+        },
+      ],
+    })
   })
 
   it('does only one lookup for single tokens', () => {
-    expect(prepareQuery(IdModel, ['field1'])('mustach')).toEqual(
-      {
-        [Op.or]: [
-          {
-            field1: { [Op.iLike]: '%mustach%' },
-          },
-        ],
-      },
-    )
+    expect(prepareQuery(IdModel, ['field1'])('mustach')).toEqual({
+      [Op.or]: [
+        {
+          field1: { [Op.iLike]: '%mustach%' },
+        },
+      ],
+    })
   })
 
   it('adopts query for uuid fields', () => {
     const uuid = 'a2b7edef-84a2-4dff-a05d-0374c170c07b'
-    expect(prepareQuery(UuidModel, ['id'])(uuid)).toEqual(
-      {
-        [Op.or]: [
-          {
-            id: { [Op.eq]: uuid },
-          },
-        ],
-      })
-    expect(prepareQuery(UuidModel, ['id', 'title'])(uuid)).toEqual(
-      {
-        [Op.or]: [
-          {
-            id: { [Op.eq]: uuid },
-          },
-          {
-            title: { [Op.iLike]: `%${uuid}%` },
-          },
-        ],
-      },
-    )
-    expect(prepareQuery(UuidModel, ['id', 'title'])('mustach')).toEqual(
-      {
-        [Op.or]: [
-          {
-            title: { [Op.iLike]: '%mustach%' },
-          },
-        ],
-      },
-    )
+    expect(prepareQuery(UuidModel, ['id'])(uuid)).toEqual({
+      [Op.or]: [
+        {
+          id: { [Op.eq]: uuid },
+        },
+      ],
+    })
+    expect(prepareQuery(UuidModel, ['id', 'title'])(uuid)).toEqual({
+      [Op.or]: [
+        {
+          id: { [Op.eq]: uuid },
+        },
+        {
+          title: { [Op.iLike]: `%${uuid}%` },
+        },
+      ],
+    })
+    expect(prepareQuery(UuidModel, ['id', 'title'])('mustach')).toEqual({
+      [Op.or]: [
+        {
+          title: { [Op.iLike]: '%mustach%' },
+        },
+      ],
+    })
+  })
+  it('searches in array', () => {
+    expect(
+      prepareQuery(UuidModel, [{ field: 'dataList', comparator: Op.contains }])(
+        'M123'
+      )
+    ).toEqual({
+      [Op.or]: [
+        {
+          dataList: { [Op.contains]: ['M123'] },
+        },
+      ],
+    })
   })
 })
