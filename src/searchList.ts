@@ -1,8 +1,8 @@
-import { Op, WhereOptions, DataTypes, ModelStatic, Model } from 'sequelize'
-import { findAndCountAll } from './helpers'
+import {Op, WhereOptions, DataTypes, ModelStatic, Model, WhereAttributeHash} from 'sequelize'
+import { findAndCountAll, FindAndCountOptions } from './helpers'
 
 type ListOpts<Attributes> = {
-  filter: WhereOptions<Attributes>
+  filter: WhereAttributeHash<Attributes>
   limit: number
   offset: number
   order: Array<[string, string]>
@@ -14,7 +14,7 @@ export const sequelizeSearchFields =
   <Attributes extends {}>(
     model: ModelStatic<Model<Attributes>>,
     searchableFields: (keyof Attributes | FieldOpts<Attributes>)[],
-    options: { partialPagination?: boolean } = {}
+    options: FindAndCountOptions<Attributes> = {}
   ) =>
   async (q: string, listOpts: ListOpts<Attributes>) => {
     const query = prepareQuery<Attributes>(model, searchableFields)(q)

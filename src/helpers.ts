@@ -1,4 +1,9 @@
-import { Model, ModelStatic, WhereOptions } from 'sequelize'
+import {Model, ModelStatic, WhereAttributeHash, WhereValue} from 'sequelize'
+
+export type FindAndCountOptions<Attributes extends {}> = {
+  partialPagination?: boolean,
+  fieldTransformation?: Record<keyof Attributes, (value: WhereValue<Attributes> | undefined) => WhereAttributeHash<Attributes>>,
+}
 
 export const findAndCountAll = async <
   Attributes extends {},
@@ -6,22 +11,31 @@ export const findAndCountAll = async <
 >(
   model: ModelStatic<Model<Attributes, CreationAttributes>>,
   conf: {
-    where: WhereOptions<Attributes>
+    where: WhereAttributeHash<Attributes>
     limit: number
     offset: number
     order: Array<[string, string]>
   },
-  options: { partialPagination?: boolean } = {}
+  options: FindAndCountOptions<Attributes> = {}
 ) => {
   const { partialPagination } = options
   const { where, limit, offset, order } = conf
+
+  let whereOverrides: WhereAttributeHash<Attributes> = {}
+  if (options.fieldTransformation) {
+    for (const field in where) {
+      if (options.fieldTransformation[field]) {
+        whereOverrides = {...whereOverrides, ...(options.fieldTransformation[field](where[field] as WhereValue<Attributes>))}
+      }
+    }
+  }
 
   if (!partialPagination) {
     return model.findAndCountAll({
       limit,
       offset,
       order,
-      where,
+      where: {...where, ...whereOverrides},
       raw: true,
     })
   }

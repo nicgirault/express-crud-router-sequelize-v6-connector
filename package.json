@@ -1,6 +1,6 @@
 {
   "name": "express-crud-router-sequelize-v6-adapter",
-  "version": "4.0.0",
+  "version": "4.1.0",
   "description": "Sequelize v6 adapter to express-crud-router",
   "main": "./lib/index.js",
   "types": "./lib/index.d.ts",

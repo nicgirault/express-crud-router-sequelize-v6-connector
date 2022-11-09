@@ -1,4 +1,4 @@
-import { Model, ModelStatic } from 'sequelize'
+import {Model, ModelStatic, WhereAttributeHash} from 'sequelize'
 import { findAndCountAll } from './helpers'
 import { sequelizeSearchFields } from './searchList'
 export { sequelizeSearchFields }
@@ -19,7 +19,7 @@ interface Actions<
     data: Partial<Attributes>
   ) => Promise<Model<Attributes, CreationAttributes>>
   getList: (conf: {
-    filter: Record<string, any>
+    filter: WhereAttributeHash<Attributes>
     limit: number
     offset: number
     order: Array<[string, string]>
