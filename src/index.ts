@@ -4,9 +4,6 @@ interface Actions<
   Attributes extends { id: string | number },
   CreationAttributes extends {} = Attributes
 > {
-  getOne: (
-    identifier: Attributes['id']
-  ) => Promise<Model<Attributes, CreationAttributes> | null>
   create: (
     body: CreationAttributes
   ) => Promise<Model<Attributes, CreationAttributes>>
@@ -15,7 +12,7 @@ interface Actions<
     id: Attributes['id'],
     data: Partial<Attributes>
   ) => Promise<Model<Attributes, CreationAttributes>>
-  getList: (conf: {
+  get: (conf: {
     filter: Record<string, any>
     limit: number
     offset: number
@@ -41,8 +38,7 @@ const sequelizeCrud = <
       }
       return record.update(body)
     },
-    getOne: async id => model.findByPk(id),
-    getList: async ({ filter, limit, offset, order }) => {
+    get: async ({ filter, limit, offset, order }) => {
       return model.findAndCountAll({
         limit,
         offset,
