@@ -1,7 +1,7 @@
 import { DataTypes, Op, Sequelize } from 'sequelize'
-import { prepareQueries } from './searchList'
+import { simpleSequelizeSearch } from './searchList'
 
-describe('crud', () => {
+describe('simpleSequelizeSearch', () => {
   const sequelize = new Sequelize('sqlite::memory:')
 
   const IdModel = sequelize.define(
@@ -43,122 +43,50 @@ describe('crud', () => {
     }
   )
 
-  it('handle autocomplete query', () => {
+  it('handles autocomplete query', () => {
     expect(
-      prepareQueries(IdModel, ['field1', 'field2'])('some mustach')
-    ).toEqual([
-      {
-        [Op.or]: [
-          {
-            field1: { [Op.iLike]: '%some mustach%' },
-          },
-          {
-            field2: { [Op.iLike]: '%some mustach%' },
-          },
-        ],
-      },
-      {
-        [Op.and]: [
-          {
-            [Op.or]: [
-              { field1: { [Op.iLike]: '%some%' } },
-              { field2: { [Op.iLike]: '%some%' } },
-            ],
-          },
-          {
-            [Op.or]: [
-              { field1: { [Op.iLike]: '%mustach%' } },
-              { field2: { [Op.iLike]: '%mustach%' } },
-            ],
-          },
-        ],
-      },
-      {
-        [Op.or]: [
-          {
-            [Op.or]: [
-              { field1: { [Op.iLike]: '%some%' } },
-              { field2: { [Op.iLike]: '%some%' } },
-            ],
-          },
-          {
-            [Op.or]: [
-              { field1: { [Op.iLike]: '%mustach%' } },
-              { field2: { [Op.iLike]: '%mustach%' } },
-            ],
-          },
-        ],
-      },
-    ])
+      simpleSequelizeSearch(IdModel, ['field1', 'field2'])('some mustach')
+    ).toEqual({
+      [Op.or]: [
+        {
+          field1: { [Op.iLike]: '%some mustach%' },
+        },
+        {
+          field2: { [Op.iLike]: '%some mustach%' },
+        },
+      ],
+    })
   })
 
   it('supports alternate comparators', () => {
     expect(
-      prepareQueries(IdModel, ['field1'])('some mustach', Op.like)
-    ).toEqual([
-      {
-        [Op.or]: [
-          {
-            field1: { [Op.like]: '%some mustach%' },
-          },
-        ],
-      },
-      {
-        [Op.and]: [
-          {
-            [Op.or]: [{ field1: { [Op.like]: '%some%' } }],
-          },
-          {
-            [Op.or]: [{ field1: { [Op.like]: '%mustach%' } }],
-          },
-        ],
-      },
-      {
-        [Op.or]: [
-          {
-            [Op.or]: [{ field1: { [Op.like]: '%some%' } }],
-          },
-          {
-            [Op.or]: [{ field1: { [Op.like]: '%mustach%' } }],
-          },
-        ],
-      },
-    ])
+      simpleSequelizeSearch(IdModel, ['field1'], Op.like)('some mustach')
+    ).toEqual({
+      [Op.or]: [
+        {
+          field1: { [Op.like]: '%some mustach%' },
+        },
+      ],
+    })
   })
 
-  it('does only one lookup for single tokens', () => {
-    expect(prepareQueries(IdModel, ['field1'])('mustach')).toEqual([
-      {
-        [Op.or]: [
-          {
-            field1: { [Op.iLike]: '%mustach%' },
-          },
-        ],
-      },
-    ])
-  })
-
-  it('adopts query for uuid fields', () => {
-    expect(prepareQueries(UuidModel, ['id'])('123-123')).toEqual([
-      {
-        [Op.or]: [
-          {
-            id: { [Op.eq]: '123-123' },
-          },
-        ],
-      },
-    ])
-    expect(prepareQueries(UuidModel, ['id', 'title'])('123-123')).toEqual([
-      {
-        [Op.or]: [
-          {
-            id: { [Op.eq]: '123-123' },
-          },
-          {
-            title: { [Op.iLike]: '%123-123%' },
-          },
-        ],
-      },
-    ])
+  it('adapts query for uuid fields', () => {
+    expect(simpleSequelizeSearch(UuidModel, ['id'])('123-123')).toEqual({
+      [Op.or]: [
+        {
+          id: { [Op.eq]: '123-123' },
+        },
+      ],
+    })
+    expect(simpleSequelizeSearch(UuidModel, ['id', 'title'])('123-123')).toEqual({
+      [Op.or]: [
+        {
+          id: { [Op.eq]: '123-123' },
+        },
+        {
+          title: { [Op.iLike]: '%123-123%' },
+        },
+      ],
+    })
   })
 })
