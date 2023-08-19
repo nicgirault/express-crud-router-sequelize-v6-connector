@@ -8,7 +8,6 @@ describe('sequelizeCrud', () => {
     expect(actions.create).toBeDefined()
     expect(actions.destroy).toBeDefined()
     expect(actions.update).toBeDefined()
-    expect(actions.getList).toBeDefined()
-    expect(actions.getOne).toBeDefined()
+    expect(actions.get).toBeDefined()
   })
 })

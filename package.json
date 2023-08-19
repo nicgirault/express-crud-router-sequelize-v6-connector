@@ -6,7 +6,7 @@
   "types": "./lib/index.d.ts",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/lalalilo/express-crud-router-sequelize-v6-connector.git"
+    "url": "git+https://github.com/nicgirault/express-crud-router-sequelize-v6-connector.git"
   },
   "author": "nicgirault <nic.girault@gmail.com>",
   "keywords": [
@@ -24,9 +24,9 @@
     "sequelize"
   ],
   "bugs": {
-    "url": "https://github.com/lalalilo/express-crud-router-sequelize-v6-connector/issues"
+    "url": "https://github.com/nicgirault/express-crud-router-sequelize-v6-connector/issues"
   },
-  "homepage": "https://github.com/lalalilo/express-crud-router-sequelize-v6-connector#readme",
+  "homepage": "https://github.com/nicgirault/express-crud-router-sequelize-v6-connector#readme",
   "license": "MIT",
   "scripts": {
     "build": "rimraf lib && babel src -d lib --extensions '.ts' && tsc",
