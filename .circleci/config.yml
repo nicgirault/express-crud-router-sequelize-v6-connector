@@ -6,7 +6,7 @@ defaults: &defaults
     - image: circleci/node:16
 
 jobs:
-  test:
+  main:
     <<: *defaults
     steps:
       - checkout
@@ -44,6 +44,6 @@ jobs:
 
 workflows:
   version: 2
-  test-deploy:
+  main-deploy:
     jobs:
-      - test
+      - main

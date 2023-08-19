@@ -59,3 +59,5 @@ const sequelizeCrud = <
 }
 
 export default sequelizeCrud
+
+export { simpleSequelizeSearch } from './searchList'
