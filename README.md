@@ -1,6 +1,6 @@
 # express-crud-router-sequelize-v6-connector
 
-Sequelize v6 connector to [express-crud-router](https://github.com/lalalilo/express-crud-router).
+Sequelize v6 connector to [express-crud-router](https://github.com/nicgirault/express-crud-router).
 
 ```ts
 import crud from 'express-crud-router'
@@ -50,4 +50,4 @@ const search = simpleSequelizeSearch(
 
 ## Contribute
 
-See https://github.com/lalalilo/express-crud-router#contribute
+See https://github.com/nicgirault/express-crud-router#contribute
